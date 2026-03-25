@@ -2,88 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PDF Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online PDF Editor</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    canvas { border: 1px solid #333; margin-top: 10px; display: block; }
-    #controls { margin-top: 10px; }
-    #textInput { width: 200px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    #pdf-container {
+      border: 1px solid #ccc;
+      width: 80%;
+      margin: 20px auto;
+      height: 600px;
+      overflow: auto;
+      position: relative;
+    }
+    canvas {
+      border: 1px solid #000;
+      margin-bottom: 10px;
+    }
+    input, button {
+      margin: 5px;
+    }
   </style>
 </head>
 <body>
-  <h1>Simple PDF Editor</h1>
-  <input type="file" id="upload" accept="application/pdf" />
-  <canvas id="pdfCanvas"></canvas>
+  <h1>Online PDF Editor</h1>
+  <input type="file" id="file-input" accept="application/pdf">
+  <div id="pdf-container"></div>
+  <input type="text" id="annotation-text" placeholder="Enter text to add">
+  <button id="add-text-btn">Add Text to PDF</button>
+  <button id="download-btn">Download Edited PDF</button>
 
-  <div id="controls">
-    <input type="text" id="textInput" placeholder="Enter text to add" />
-    <button id="addTextBtn">Add Text</button>
-    <button id="downloadBtn">Download PDF</button>
-  </div>
-
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.141/pdf.min.js"></script>
-  <!-- pdf-lib -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.20.0/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
 
   <script>
-    const uploadInput = document.getElementById('upload');
-    const canvas = document.getElementById('pdfCanvas');
-    const ctx = canvas.getContext('2d');
-    const addTextBtn = document.getElementById('addTextBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const textInput = document.getElementById('textInput');
+    let pdfDoc = null;
+    let pdfBytes = null;
+    let currentPdfLibDoc = null;
+    let currentPageIndex = 0;
+    const pdfContainer = document.getElementById('pdf-container');
 
-    let pdfBytes, pdfDoc, modifiedPdfBytes;
-
-    uploadInput.addEventListener('change', async (e) => {
+    document.getElementById('file-input').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
       pdfBytes = await file.arrayBuffer();
+      currentPdfLibDoc = await PDFLib.PDFDocument.load(pdfBytes);
 
-      // Render first page
-      const loadingTask = pdfjsLib.getDocument(pdfBytes);
-      pdfDoc = await loadingTask.promise;
-      const page = await pdfDoc.getPage(1);
-      const viewport = page.getViewport({ scale: 1.5 });
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+      const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+      const pdf = await loadingTask.promise;
 
-      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-      alert('PDF loaded! Now you can add text.');
+      pdfContainer.innerHTML = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        pdfContainer.appendChild(canvas);
+      }
     });
 
-    addTextBtn.addEventListener('click', async () => {
-      if (!pdfBytes) return alert('Upload a PDF first!');
-      const text = textInput.value || 'Hello';
-      const pdfDocLib = await PDFLib.PDFDocument.load(pdfBytes);
-      const pages = pdfDocLib.getPages();
-      const firstPage = pages[0];
+    document.getElementById('add-text-btn').addEventListener('click', async () => {
+      const text = document.getElementById('annotation-text').value;
+      if (!text) return alert('Enter text to add!');
 
-      // Draw text at fixed position
-      firstPage.drawText(text, { x: 50, y: 400, size: 24, color: PDFLib.rgb(0, 0, 0) });
+      const page = currentPdfLibDoc.getPage(currentPageIndex);
+      page.drawText(text, {
+        x: 50,
+        y: 400,
+        size: 24,
+        color: PDFLib.rgb(1, 0, 0),
+      });
 
-      modifiedPdfBytes = await pdfDocLib.save();
-
-      // Preview new PDF on canvas
-      const loadingTask = pdfjsLib.getDocument(modifiedPdfBytes);
-      const newPdf = await loadingTask.promise;
-      const page = await newPdf.getPage(1);
-      const viewport = page.getViewport({ scale: 1.5 });
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-      alert('Text added! Click "Download PDF" to save.');
+      const pdfDataUri = await currentPdfLibDoc.saveAsBase64({ dataUri: true });
+      pdfContainer.innerHTML = `<iframe src="${pdfDataUri}" width="100%" height="600px"></iframe>`;
     });
 
-    downloadBtn.addEventListener('click', () => {
-      if (!modifiedPdfBytes) return alert('Add text first!');
-      const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'edited.pdf';
-      link.click();
+    document.getElementById('download-btn').addEventListener('click', async () => {
+      const pdfBytesNew = await currentPdfLibDoc.save();
+      const blob = new Blob([pdfBytesNew], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'edited.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
     });
   </script>
 </body>
