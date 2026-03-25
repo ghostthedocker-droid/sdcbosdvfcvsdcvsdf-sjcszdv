@@ -1,128 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interactive PDF Editor</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-<style>
-  body { font-family: Arial; text-align: center; margin: 20px; }
-  #pdf-container { width: 80%; margin: 20px auto; }
-  .page-container { position: relative; margin-bottom: 20px; }
-  canvas.pdf-page { border: 1px solid #000; display: block; }
-  canvas.fabric-canvas { position: absolute; left: 0; top: 0; }
-  #controls { margin-top: 10px; }
-  input, button { margin: 5px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Editor - Free Online</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .header h1 { 
+            font-size: 2.5em; 
+            color: #333; 
+            margin-bottom: 10px;
+        }
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #545b62; }
+        
+        #pdfContainer {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            min-height: 70vh;
+            position: relative;
+            overflow: auto;
+        }
+        canvas { 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+            cursor: text;
+        }
+        .page-info {
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+            font-size: 16px;
+        }
+        .text-editor {
+            position: fixed;
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 300px;
+            max-width: 400px;
+        }
+        .text-editor h4 { margin-bottom: 15px; color: #333; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        .editor-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .editor-controls label { font-size: 14px; color: #666; }
+        input[type="range"] { width: 120px; }
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .no-pdf {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #666;
+            text-align: center;
+        }
+        .no-pdf svg {
+            width: 100px;
+            height: 100px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .btn { justify-content: center; }
+            .text-editor { 
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF Editor</h1>
+            <p>Edit PDF text online for free - No signup required</p>
+        </div>
 
-<h1>Interactive PDF Editor</h1>
-<input type="file" id="file-input" accept="application/pdf">
-<div id="pdf-container"></div>
-<div id="controls">
-  <input type="text" id="annotation-text" placeholder="Enter text">
-  <button id="add-text-btn">Add Text</button>
-  <button id="download-btn">Download PDF</button>
-</div>
+        <div class="toolbar">
+            <input type="file" id="pdfInput" accept="application/pdf" style="display: none;">
+            <label for="pdfInput" class="btn btn-primary">📁 Upload PDF</label>
+            
+            <button id="downloadBtn" class="btn btn-success" style="display: none;">
+                💾 Download Edited PDF
+            </button>
 
-<script>
-let pdfDoc = null;
-let fabricCanvases = [];
-let currentPdfBytes = null;
+            <div class="page-controls" style="display: none; margin-left: auto; flex-wrap: wrap;">
+                <button id="prevPage" class="btn btn-secondary">← Prev</button>
+                <span id="pageInfo" style="white-space: nowrap;"></span>
+                <button id="nextPage" class="btn btn-secondary">Next →</button>
+            </div>
+        </div>
 
-const pdfContainer = document.getElementById('pdf-container');
+        <div id="pdfContainer">
+            <div class="no-pdf" id="noPdfMessage">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                <h3>Upload a PDF to start editing</h3>
+                <p>Click any text in the PDF to edit it</p>
+            </div>
+        </div>
+    </div>
 
-// Load PDF
-document.getElementById('file-input').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  currentPdfBytes = await file.arrayBuffer();
-  pdfDoc = await pdfjsLib.getDocument({ data: currentPdfBytes }).promise;
+    <!-- Text Editor Overlay -->
+    <div id="textEditor" class="text-editor" style="display: none;">
+        <h4>✏️ Edit Text</h4>
+        <textarea id="editText" placeholder="Edit the selected text..."></textarea>
+        <div class="editor-controls">
+            <label>Size: <span id="fontSizeDisplay">12</span>px</label>
+            <input type="range" id="fontSize" min="8" max="24" value="12">
+        </div>
+        <div class="editor-actions">
+            <button id="saveText" class="btn btn-primary">✅ Save</button>
+            <button id="cancelEdit" class="btn btn-secondary">❌ Cancel</button>
+        </div>
+    </div>
 
-  pdfContainer.innerHTML = '';
-  fabricCanvases = [];
+    <script>
+        // Global variables
+        let pdfDoc = null;
+        let currentPageNum = 1;
+        let totalPages = 0;
+        let originalPdfBytes = null;
+        let editPosition = { x: 0, y: 0 };
+        let pdfjsLib = window.pdfjsLib;
 
-  for (let i = 1; i <= pdfDoc.numPages; i++) {
-    const page = await pdfDoc.getPage(i);
-    const viewport = page.getViewport({ scale: 1.5 });
+        // Initialize PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
 
-    // Container for PDF page + Fabric overlay
-    const pageDiv = document.createElement('div');
-    pageDiv.className = 'page-container';
-    pageDiv.style.width = viewport.width + 'px';
-    pageDiv.style.height = viewport.height + 'px';
-    pdfContainer.appendChild(pageDiv);
+        // DOM elements
+        const pdfInput = document.getElementById('pdfInput');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const pdfContainer = document.getElementById('pdfContainer');
+        const pageInfo = document.getElementById('pageInfo');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const noPdfMessage = document.getElementById('noPdfMessage');
+        const textEditor = document.getElementById('textEditor');
+        const editText = document.getElementById('editText');
+        const fontSizeSlider = document.getElementById('fontSize');
+        const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+        const saveTextBtn = document.getElementById('saveText');
+        const cancelEditBtn = document.getElementById('cancelEdit');
 
-    // PDF Canvas
-    const pdfCanvas = document.createElement('canvas');
-    pdfCanvas.className = 'pdf-page';
-    pdfCanvas.width = viewport.width;
-    pdfCanvas.height = viewport.height;
-    pageDiv.appendChild(pdfCanvas);
-    const ctx = pdfCanvas.getContext('2d');
-    await page.render({ canvasContext: ctx, viewport }).promise;
+        // Event listeners
+        pdfInput.addEventListener('change', handleFileSelect);
+        downloadBtn.addEventListener('click', downloadPDF);
+        prevPageBtn.addEventListener('click', () => goToPage(currentPageNum - 1));
+        nextPageBtn.addEventListener('click', () => goToPage(currentPageNum + 1));
+        saveTextBtn.addEventListener('click', saveTextEdit);
+        cancelEditBtn.addEventListener('click', hideTextEditor);
+        fontSizeSlider.addEventListener('input', (e) => {
+            fontSizeDisplay.textContent = e.target.value;
+        });
 
-    // Fabric overlay
-    const fabricCanvasEl = document.createElement('canvas');
-    fabricCanvasEl.className = 'fabric-canvas';
-    fabricCanvasEl.width = viewport.width;
-    fabricCanvasEl.height = viewport.height;
-    pageDiv.appendChild(fabricCanvasEl);
+        // Make canvas selectable
+        function makeCanvasSelectable(canvas) {
+            canvas.style.cursor = 'text';
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                editPosition = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+                editText.value = '';
+                editText.focus();
+                textEditor.style.left = `${rect.left + editPosition.x + 10}px`;
+                textEditor.style.top = `${rect.top + editPosition.y + 10}px`;
+                textEditor.style.display = 'block';
+            });
+        }
 
-    const fabricCanvas = new fabric.Canvas(fabricCanvasEl, { selection: true });
-    fabricCanvases.push(fabricCanvas);
-  }
-});
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-// Add text
-document.getElementById('add-text-btn').addEventListener('click', () => {
-  const text = document.getElementById('annotation-text').value;
-  if (!text) return alert('Enter text!');
-  if (!fabricCanvases.length) return alert('Upload a PDF first!');
+            noPdfMessage.style.display = 'none';
+            const arrayBuffer = await file.arrayBuffer();
+            originalPdfBytes = new Uint8Array(arrayBuffer);
 
-  // Add text to the first page for simplicity
-  const fabricCanvas = fabricCanvases[0];
-  const textbox = new fabric.Textbox(text, {
-    left: 50,
-    top: 50,
-    fontSize: 24,
-    fill: 'red',
-    editable: true
-  });
-  fabricCanvas.add(textbox);
-  fabricCanvas.setActiveObject(textbox);
-});
+            // Load with PDF.js for rendering
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            totalPages = pdf.numPages;
+            currentPageNum = 1;
+            renderPage(currentPageNum, pdf);
 
-// Download PDF
-document.getElementById('download-btn').addEventListener('click', async () => {
-  if (!currentPdfBytes) return alert('Upload a PDF first!');
-  const pdfLibDoc = await PDFLib.PDFDocument.load(currentPdfBytes);
-  const pages = pdfLibDoc.getPages();
+            // Show controls
+            downloadBtn.style.display = 'inline-flex';
+            document.querySelector('.page-controls').style.display = 'flex';
+            pageInfo.textContent = `Page ${currentPageNum} of ${totalPages}`;
+            
+            updatePageButtons();
+        }
 
-  for (let i = 0; i < fabricCanvases.length; i++) {
-    const fabricCanvas = fabricCanvases[i];
-    const pngDataUrl = fabricCanvas.toDataURL({ format: 'png' });
-    const pngBytes = await fetch(pngDataUrl).then(res => res.arrayBuffer());
-    const pngImage = await pdfLibDoc.embedPng(pngBytes);
+        async function renderPage(num, pdf) {
+            pdfContainer.innerHTML = '<div>Loading page...</div>';
+            
+            const page = await pdf.getPage(num);
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale });
 
-    const { width, height } = pages[i].getSize();
-    pages[i].drawImage(pngImage, { x: 0, y: 0, width, height });
-  }
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
 
-  const pdfBytes = await pdfLibDoc.save();
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
+            pdfContainer.innerHTML = '';
+            pdfContainer.appendChild(canvas);
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'edited.pdf';
-  a.click();
-  URL.revokeObjectURL(url);
-});
-</script>
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
 
+            await page.render(renderContext).promise;
+            makeCanvasSelectable(canvas);
+        }
+
+        function goToPage(pageNum) {
+            if (pageNum < 1 || pageNum > totalPages) return;
+            currentPageNum = pageNum;
+            renderPage(currentPageNum, pdfDoc);
+            pageInfo.textContent = `Page ${currentPageNum} of ${totalPages}`;
+            updatePageButtons();
+        }
+
+        function updatePageButtons() {
+            prevPageBtn.disabled = currentPageNum <= 1;
+            nextPageBtn.disabled = currentPageNum >= totalPages;
+        }
+
+        async function saveTextEdit() {
+            const text = editText.value.trim();
+            if (!text) return;
+
+            try {
+                const { PDFDocument, rgb } = PDFLib;
+                const pdfDocLib = await PDFDocument.load(originalPdfBytes);
+                const pages = pdfDocLib.getPages();
+                const page = pages[currentPageNum - 1];
+
+                // Add text at click position (flip Y for PDF coordinates)
+                page.drawText(text, {
+                    x: editPosition.x,
+                    y: page.getHeight() - editPosition.y - 20,
+                    size: parseInt(fontSizeSlider.value),
+                    color: rgb(0, 0, 0),
+                });
+
+                originalPdfBytes = await pdfDocLib.save();
+                hideTextEditor();
+                
+                // Re-render current page
+                renderPage(currentPageNum, pdfDoc);
+                
+                alert('✅ Text saved to PDF!');
+            } catch (error) {
+                console.error('Error saving text:', error);
+                alert('❌ Error saving text. Please try again.');
+            }
+        }
+
+        function hideTextEditor() {
+            textEditor.style.display = 'none';
+        }
+
+        async function downloadPDF() {
+            if (!originalPdfBytes) return;
+
+            const blob = new Blob([originalPdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'edited-document.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Hide editor when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!textEditor.contains(e.target) && !pdfContainer.contains(e.target)) {
+                hideTextEditor();
+            }
+        });
+    </script>
 </body>
 </html>
