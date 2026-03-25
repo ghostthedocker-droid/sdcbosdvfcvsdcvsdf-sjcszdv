@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D QR Code Generator</title>
+<title>Ultimate QR Code Generator</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -14,6 +14,7 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    padding: 20px;
   }
 
   .card {
@@ -22,13 +23,8 @@
     box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
     padding: 40px;
     text-align: center;
-    max-width: 400px;
+    max-width: 450px;
     width: 100%;
-    transition: transform 0.3s ease;
-  }
-
-  .card:hover {
-    transform: translateY(-10px);
   }
 
   h1 {
@@ -37,21 +33,22 @@
     margin-bottom: 20px;
   }
 
-  input {
+  select, input[type=text], input[type=color] {
     width: 100%;
-    padding: 15px;
+    padding: 12px;
+    margin: 10px 0;
     border-radius: 12px;
     border: none;
     outline: none;
     font-size: 16px;
-    margin-bottom: 20px;
     box-shadow: inset 5px 5px 10px #bebebe,
                 inset -5px -5px 10px #ffffff;
     background: #e0e5ec;
   }
 
   button {
-    padding: 15px 25px;
+    padding: 12px 20px;
+    margin-top: 10px;
     border: none;
     border-radius: 12px;
     font-size: 16px;
@@ -69,29 +66,161 @@
   }
 
   #qrcode {
-    margin-top: 30px;
+    margin-top: 20px;
     display: flex;
     justify-content: center;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+  }
+
+  .history {
+    margin-top: 25px;
+    max-height: 150px;
+    overflow-y: auto;
+    text-align: left;
+  }
+
+  .history-item {
+    background: #e0e5ec;
+    margin: 5px 0;
+    padding: 5px 10px;
+    border-radius: 12px;
+    box-shadow: inset 2px 2px 5px #bebebe,
+                inset -2px -2px 5px #ffffff;
+    font-size: 14px;
   }
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>3D QR Code Generator</h1>
-  <input id="text" placeholder="Enter URL or text" />
+  <h1>Ultimate QR Generator</h1>
+
+  <select id="type">
+    <option value="text">Text / URL</option>
+    <option value="wifi">Wi-Fi</option>
+    <option value="vcard">vCard</option>
+    <option value="email">Email</option>
+    <option value="sms">SMS</option>
+    <option value="phone">Phone</option>
+    <option value="event">Event</option>
+    <option value="crypto">Crypto Payment</option>
+  </select>
+
+  <input type="text" id="input1" placeholder="Enter text / URL / Name / etc">
+  <input type="text" id="input2" placeholder="Additional info (optional)">
+  
+  <label>Foreground Color:</label>
+  <input type="color" id="fgcolor" value="#000000">
+  <label>Background Color:</label>
+  <input type="color" id="bgcolor" value="#ffffff">
+
+  <select id="ecLevel">
+    <option value="L">Error Correction: Low</option>
+    <option value="M" selected>Medium</option>
+    <option value="Q">Quartile</option>
+    <option value="H">High</option>
+  </select>
+
   <button onclick="generateQR()">Generate QR</button>
+
+  <div class="actions">
+    <button onclick="downloadQR()">Download PNG</button>
+    <button onclick="copyQR()">Copy to Clipboard</button>
+  </div>
+
   <div id="qrcode"></div>
+
+  <div class="history">
+    <h3>History</h3>
+    <div id="historyList"></div>
+  </div>
 </div>
 
 <script>
+let historyData = [];
+
 function generateQR() {
-  const text = document.getElementById('text').value;
+  const type = document.getElementById('type').value;
+  const input1 = document.getElementById('input1').value.trim();
+  const input2 = document.getElementById('input2').value.trim();
+  const fg = document.getElementById('fgcolor').value;
+  const bg = document.getElementById('bgcolor').value;
+  const ec = document.getElementById('ecLevel').value;
+
+  if (!input1) return alert("Please enter required input!");
+
+  let qrText = "";
+
+  switch(type){
+    case "text":
+      qrText = input1;
+      break;
+    case "wifi":
+      qrText = `WIFI:T:WPA;S:${input1};P:${input2};;`;
+      break;
+    case "vcard":
+      qrText = `BEGIN:VCARD\nVERSION:3.0\nFN:${input1}\nORG:${input2}\nEND:VCARD`;
+      break;
+    case "email":
+      qrText = `mailto:${input1}?subject=${input2}`;
+      break;
+    case "sms":
+      qrText = `SMSTO:${input1}:${input2}`;
+      break;
+    case "phone":
+      qrText = `tel:${input1}`;
+      break;
+    case "event":
+      qrText = `BEGIN:VEVENT\nSUMMARY:${input1}\nDESCRIPTION:${input2}\nEND:VEVENT`;
+      break;
+    case "crypto":
+      qrText = `bitcoin:${input1}?amount=${input2}`;
+      break;
+  }
+
   const container = document.getElementById('qrcode');
   container.innerHTML = '';
-  QRCode.toCanvas(document.createElement('canvas'), text, { width: 200 }, function (error, canvas) {
+  QRCode.toCanvas(document.createElement('canvas'), qrText, { 
+    width: 220, 
+    color: { dark: fg, light: bg }, 
+    errorCorrectionLevel: ec
+  }, function (error, canvas) {
     if (error) console.error(error);
     container.appendChild(canvas);
+    saveHistory(qrText);
   });
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qrcode canvas');
+  if (!canvas) return alert("Generate QR first!");
+  const link = document.createElement('a');
+  link.download = 'qrcode.png';
+  link.href = canvas.toDataURL();
+  link.click();
+}
+
+function copyQR() {
+  const canvas = document.querySelector('#qrcode canvas');
+  if (!canvas) return alert("Generate QR first!");
+  canvas.toBlob(blob => {
+    const item = new ClipboardItem({ "image/png": blob });
+    navigator.clipboard.write([item]);
+    alert("QR copied to clipboard!");
+  });
+}
+
+function saveHistory(text) {
+  historyData.unshift(text);
+  if(historyData.length > 10) historyData.pop(); // keep last 10
+  const list = document.getElementById('historyList');
+  list.innerHTML = historyData.map(item => `<div class="history-item">${item}</div>`).join('');
 }
 </script>
 </body>
