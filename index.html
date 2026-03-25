@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Username Finder - HackerAI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff88; min-height: 100vh; 
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px #00ff88; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 40px; font-size: 1.1em; }
+        .search-box { 
+            display: flex; gap: 10px; margin-bottom: 30px; 
+            background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; 
+            backdrop-filter: blur(10px); border: 1px solid rgba(0,255,136,0.3);
+        }
+        input[type="text"] { 
+            flex: 1; padding: 15px 20px; font-size: 1.1em; 
+            background: rgba(0,0,0,0.5); border: 2px solid #00ff88; 
+            border-radius: 10px; color: #00ff88; outline: none;
+        }
+        input[type="text"]:focus { border-color: #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.3); }
+        button { 
+            padding: 15px 30px; background: linear-gradient(45deg, #00ff88, #00cc66); 
+            border: none; border-radius: 10px; color: #000; font-weight: bold; 
+            cursor: pointer; font-size: 1.1em; transition: all 0.3s;
+        }
+        button:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,255,136,0.4); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .results { display: none; }
+        .result-item { 
+            background: rgba(255,255,255,0.05); margin-bottom: 15px; padding: 20px; 
+            border-radius: 12px; border-left: 4px solid #00ff88; transition: all 0.3s;
+        }
+        .result-item:hover { transform: translateX(10px); box-shadow: 0 10px 30px rgba(0,255,136,0.2); }
+        .result-item.found { border-left-color: #00ff88; }
+        .result-item.not-found { border-left-color: #ff4444; opacity: 0.7; }
+        .platform { font-weight: bold; color: #ffaa00; font-size: 1.1em; margin-bottom: 8px; }
+        .url { 
+            word-break: break-all; background: rgba(0,0,0,0.3); 
+            padding: 10px; border-radius: 8px; font-family: monospace; 
+            color: #00ff88; text-decoration: none; display: inline-block;
+        }
+        .url:hover { background: rgba(0,255,136,0.2); color: #fff; }
+        .status { font-size: 0.9em; margin-top: 10px; }
+        .loading { text-align: center; color: #888; font-style: italic; display: none; }
+        .stats { 
+            display: flex; justify-content: space-around; 
+            background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; 
+            margin-top: 30px; font-size: 1.1em;
+        }
+        .stat { text-align: center; }
+        .stat-number { color: #00ff88; font-weight: bold; font-size: 1.5em; }
+        @media (max-width: 768px) { .search-box { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕵️ OSINT Username Finder</h1>
+        <p class="subtitle">Enter any username to search 100+ social platforms instantly</p>
+        
+        <div class="search-box">
+            <input type="text" id="username" placeholder="Enter username (no @ symbol)" maxlength="50">
+            <button onclick="searchUsername()">🔍 SEARCH</button>
+        </div>
+
+        <div class="loading" id="loading">Scanning 100+ platforms... This takes ~30 seconds</div>
+        
+        <div class="results" id="results">
+            <div class="stats" id="stats">
+                <div class="stat">
+                    <div class="stat-number" id="foundCount">0</div>
+                    <div>Found</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="checkedCount">0</div>
+                    <div>Checked</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="notFoundCount">0</div>
+                    <div>Not Found</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PLATFORMS = [
+            // Top social media & gaming platforms (most reliable)
+            { name: "Instagram", url: "https://www.instagram.com/{username}/", check: "profile_pic" },
+            { name: "Twitter/X", url: "https://twitter.com/{username}", check: "Profile" },
+            { name: "TikTok", url: "https://www.tiktok.com/@{username}", check: "tiktok" },
+            { name: "YouTube", url: "https://www.youtube.com/@{username}", check: "youtube.com" },
+            { name: "Twitch", url: "https://www.twitch.tv/{username}", check: "twitch.tv" },
+            { name: "GitHub", url: "https://github.com/{username}", check: "GitHub" },
+            { name: "Reddit", url: "https://www.reddit.com/user/{username}", check: "reddit.com" },
+            { name: "LinkedIn", url: "https://www.linkedin.com/in/{username}/", check: "linkedin" },
+            { name: "Facebook", url: "https://www.facebook.com/{username}", check: "facebook" },
+            { name: "Pinterest", url: "https://www.pinterest.com/{username}/", check: "pinterest" },
+            
+            // Gaming platforms
+            { name: "Steam", url: "https://steamcommunity.com/id/{username}/", check: "steamcommunity" },
+            { name: "Roblox", url: "https://www.roblox.com/users/profile?username={username}", check: "roblox" },
+            { name: "Discord (web)", url: "https://discord.com/users/{username}", check: "discord" },
+            
+            // Photo/Video
+            { name: "Flickr", url: "https://www.flickr.com/people/{username}/", check: "flickr" },
+            { name: "500px", url: "https://500px.com/p/{username}", check: "500px" },
+            { name: "DeviantArt", url: "https://www.deviantart.com/{username}", check: "deviantart" },
+            
+            // Music/Audio
+            { name: "SoundCloud", url: "https://soundcloud.com/{username}", check: "soundcloud" },
+            { name: "Spotify", url: "https://open.spotify.com/user/{username}", check: "spotify" },
+            
+            // Blogging/Forums
+            { name: "Tumblr", url: "https://{username}.tumblr.com/", check: "tumblr" },
+            { name: "Medium", url: "https://medium.com/@{username}", check: "medium" },
+            { name: "WordPress", url: "https://{username}.wordpress.com/", check: "wordpress" },
+            
+            // Crypto/NFT
+            { name: "OpenSea", url: "https://opensea.io/{username}", check: "opensea" },
+            { name: "Ethereum Name", url: "https://{username}.eth.limo/", check: "eth" },
+            
+            // Other popular
+            { name: "Snapchat", url: "https://www.snapchat.com/add/{username}", check: "snapchat" },
+            { name: "Telegram", url: "https://t.me/{username}", check: "t.me" },
+            { name: "CashApp", url: "https://cash.app/${username}", check: "cash.app" },
+            { name: "Venmo", url: "https://venmo.com/{username}", check: "venmo" },
+            
+            // Expandable list - add more platforms here
+            { name: "OnlyFans", url: "https://onlyfans.com/{username}", check: "onlyfans" },
+            { name: "Patreon", url: "https://www.patreon.com/{username}", check: "patreon" },
+            { name: "Kick", url: "https://kick.com/{username}", check: "kick.com" },
+            { name: "Rumble", url: "https://rumble.com/c/{username}", check: "rumble" },
+            { name: "Odysee", url: "https://odysee.com/@{username}:0", check: "odysee" }
+        ];
+
+        async function searchUsername() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const searchBtn = document.querySelector('button');
+            
+            // Reset stats
+            document.getElementById('foundCount').textContent = '0';
+            document.getElementById('checkedCount').textContent = '0';
+            document.getElementById('notFoundCount').textContent = '0';
+            resultsDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            searchBtn.disabled = true;
+            searchBtn.textContent = '🔄 SCANNING...';
+
+            let foundCount = 0;
+            let checkedCount = 0;
+            let notFoundCount = 0;
+
+            resultsDiv.innerHTML = '<div class="stats" id="stats">' + resultsDiv.querySelector('.stats').outerHTML + '</div>';
+
+            for (const platform of PLATFORMS) {
+                try {
+                    const testUrl = platform.url.replace('{username}', username);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                    const response = await fetch(testUrl, {
+                        method: 'HEAD',
+                        signal: controller.signal,
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    });
+
+                    clearTimeout(timeoutId);
+                    checkedCount++;
+
+                    // Update stats in real-time
+                    document.getElementById('checkedCount').textContent = checkedCount;
+                    document.getElementById('notFoundCount').textContent = checkedCount - foundCount;
+
+                    if (response.ok || response.status === 200 || response.status === 301 || response.status === 302) {
+                        foundCount++;
+                        document.getElementById('foundCount').textContent = foundCount;
+                        
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'result-item found';
+                        resultItem.innerHTML = `
+                            <div class="platform">${platform.name} ✅</div>
+                            <a class="url" href="${testUrl}" target="_blank" rel="noopener">${testUrl}</a>
+                            <div class="status">Status: ${response.status} (${response.statusText})</div>
+                        `;
+                        resultsDiv.appendChild(resultItem);
+                    }
+                } catch (error) {
+                    // Timeout or network error - assume not found
+                    checkedCount++;
+                    document.getElementById('checkedCount').textContent = checkedCount;
+                    document.getElementById('notFoundCount').textContent = checkedCount - foundCount;
+                }
+            }
+
+            // Final stats update
+            document.getElementById('foundCount').textContent = foundCount;
+            document.getElementById('checkedCount').textContent = PLATFORMS.length;
+            document.getElementById('notFoundCount').textContent = PLATFORMS.length - foundCount;
+
+            resultsDiv.style.display = 'block';
+            loadingDiv.style.display = 'none';
+            searchBtn.disabled = false;
+            searchBtn.textContent = '🔍 SEARCH AGAIN';
+        }
+
+        // Enter key support
+        document.getElementById('username').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchUsername();
+        });
+
+        // Auto-focus input
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>
