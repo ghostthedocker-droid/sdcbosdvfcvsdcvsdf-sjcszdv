@@ -3,24 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHunt OSINT - Email Recon</title>
+    <title>GHunt Online - Gmail OSINT Framework</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🕵️ GHunt OSINT Tool</h1>
-            <p>Google Account Enumeration & Reconnaissance</p>
-        </div>
-        
+            <h1><i class="fas fa-search"></i> GHunt Online</h1>
+            <p>Advanced Gmail OSINT Framework - Instant Deployment</p>
+        </header>
+
         <div class="input-section">
-            <input type="email" id="emailInput" placeholder="Enter email address (e.g. target@gmail.com)">
-            <button onclick="searchEmail()">🔍 Search</button>
+            <div class="input-group">
+                <input type="email" id="emailInput" placeholder="target@gmail.com" required>
+                <button id="scanBtn"><i class="fas fa-rocket"></i> LAUNCH HUNT</button>
+            </div>
+            <div class="options">
+                <label><input type="checkbox" id="deepScan" checked> Deep Scan (Social/Photos)</label>
+                <label><input type="checkbox" id="reverseLookup"> Reverse Email Lookup</label>
+            </div>
         </div>
-        
-        <div id="loading" class="loading hidden">Scanning Google services...</div>
-        
-        <div id="results" class="results hidden"></div>
+
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Executing OSINT reconnaissance...</p>
+        </div>
+
+        <div class="results" id="results" style="display: none;">
+            <div class="summary-card">
+                <h3><i class="fas fa-chart-line"></i> Recon Summary</h3>
+                <div id="summaryStats"></div>
+            </div>
+            
+            <div class="result-grid">
+                <div class="card social-card" id="socialResults">
+                    <h4><i class="fab fa-facebook"></i> Social Profiles</h4>
+                    <div id="socialList"></div>
+                </div>
+                
+                <div class="card photo-card" id="photoResults">
+                    <h4><i class="fas fa-images"></i> Google Photos</h4>
+                    <div id="photoList"></div>
+                </div>
+                
+                <div class="card breach-card" id="breachResults">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Data Breaches</h4>
+                    <div id="breachList"></div>
+                </div>
+                
+                <div class="card recon-card" id="reconResults">
+                    <h4><i class="fas fa-globe"></i> Additional Recon</h4>
+                    <div id="reconList"></div>
+                </div>
+            </div>
+            
+            <div class="export-section">
+                <button id="exportJson" class="btn-secondary"><i class="fas fa-download"></i> Export JSON</button>
+                <button id="copyResults" class="btn-secondary"><i class="fas fa-copy"></i> Copy Results</button>
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
     </div>
 
     <script src="script.js"></script>
