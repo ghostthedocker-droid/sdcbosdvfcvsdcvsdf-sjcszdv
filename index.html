@@ -1,78 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jamsinfinity | Portfolio</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D QR Code Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #e0e5ec;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .card {
+    background: #e0e5ec;
+    border-radius: 25px;
+    box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-10px);
+  }
+
+  h1 {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  input {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    margin-bottom: 20px;
+    box-shadow: inset 5px 5px 10px #bebebe,
+                inset -5px -5px 10px #ffffff;
+    background: #e0e5ec;
+  }
+
+  button {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #e0e5ec;
+    box-shadow: 5px 5px 10px #bebebe,
+                -5px -5px 10px #ffffff;
+    transition: all 0.3s ease;
+  }
+
+  button:hover {
+    box-shadow: inset 5px 5px 10px #bebebe,
+                inset -5px -5px 10px #ffffff;
+  }
+
+  #qrcode {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+  }
+</style>
 </head>
-<body class="bg-gray-900 text-white font-sans scroll-smooth">
+<body>
+<div class="card">
+  <h1>3D QR Code Generator</h1>
+  <input id="text" placeholder="Enter URL or text" />
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode"></div>
+</div>
 
-  <!-- Hero / Introduction -->
-  <section class="min-h-screen flex flex-col justify-center items-center text-center px-4">
-    <h1 class="text-5xl md:text-6xl font-bold mb-4">Jamsinfinity</h1>
-    <p class="text-xl md:text-2xl mb-8">Exploring the digital world | OSINT Enthusiast</p>
-    <a href="#contact" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition">Contact Me</a>
-  </section>
-
-  <!-- About Me -->
-  <section id="about" class="py-20 px-4 max-w-3xl mx-auto text-center">
-    <h2 class="text-4xl font-semibold mb-6">About Me</h2>
-    <p class="text-lg leading-relaxed text-gray-300">Still finding my story, but passionate about exploring information and uncovering insights through OSINT techniques.</p>
-  </section>
-
-  <!-- Projects -->
-  <section id="projects" class="py-20 bg-gray-800 px-4">
-    <h2 class="text-4xl font-semibold text-center mb-10">Projects</h2>
-    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-      <div class="bg-gray-700 p-6 rounded-lg hover:scale-105 transform transition">
-        <h3 class="text-2xl font-bold mb-2">Project One</h3>
-        <p>Short description here. <a href="#" class="text-blue-400 underline">View</a></p>
-      </div>
-      <div class="bg-gray-700 p-6 rounded-lg hover:scale-105 transform transition">
-        <h3 class="text-2xl font-bold mb-2">Project Two</h3>
-        <p>Short description here. <a href="#" class="text-blue-400 underline">View</a></p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Skills -->
-  <section id="skills" class="py-20 px-4 text-center">
-    <h2 class="text-4xl font-semibold mb-6">Skills</h2>
-    <p class="text-lg mb-6">OSINT (Open Source Intelligence)</p>
-    <div class="flex justify-center flex-wrap gap-4">
-      <span class="bg-blue-500 text-white px-4 py-2 rounded-lg">Reconnaissance</span>
-      <span class="bg-blue-500 text-white px-4 py-2 rounded-lg">Data Analysis</span>
-      <span class="bg-blue-500 text-white px-4 py-2 rounded-lg">Python Scripting</span>
-      <span class="bg-blue-500 text-white px-4 py-2 rounded-lg">Social Media Research</span>
-    </div>
-  </section>
-
-  <!-- Experience -->
-  <section id="experience" class="py-20 bg-gray-800 px-4">
-    <h2 class="text-4xl font-semibold text-center mb-10">Experience</h2>
-    <div class="max-w-4xl mx-auto space-y-6 text-center">
-      <div>
-        <h3 class="text-2xl font-bold">Internship / Job Title</h3>
-        <p class="text-gray-300">Company / Organization – Duration</p>
-      </div>
-      <div>
-        <h3 class="text-2xl font-bold">Another Experience</h3>
-        <p class="text-gray-300">Organization – Duration</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Contact -->
-  <section id="contact" class="py-20 px-4 text-center">
-    <h2 class="text-4xl font-semibold mb-6">Get In Touch</h2>
-    <p class="mb-6">Email me at <a href="mailto:youremail@example.com" class="text-blue-400 underline">youremail@example.com</a></p>
-    <div class="flex justify-center gap-6">
-      <a href="#" class="text-blue-400 hover:text-blue-500">GitHub</a>
-      <a href="#" class="text-blue-400 hover:text-blue-500">LinkedIn</a>
-      <a href="#" class="text-blue-400 hover:text-blue-500">Twitter</a>
-    </div>
-  </section>
-
+<script>
+function generateQR() {
+  const text = document.getElementById('text').value;
+  const container = document.getElementById('qrcode');
+  container.innerHTML = '';
+  QRCode.toCanvas(document.createElement('canvas'), text, { width: 200 }, function (error, canvas) {
+    if (error) console.error(error);
+    container.appendChild(canvas);
+  });
+}
+</script>
 </body>
 </html>
