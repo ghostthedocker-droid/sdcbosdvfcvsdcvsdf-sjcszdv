@@ -3,503 +3,436 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Editor - Free Online</title>
+    <title>PDF Editor Pro - Click to Edit</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
             padding: 20px;
+            min-height: 100vh;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         .header {
             text-align: center;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
         }
         .header h1 { 
-            font-size: 2.8em; 
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            font-size: 2.2em; 
+            color: #1a1a1a;
+            margin-bottom: 8px;
         }
+        .header p { color: #666; font-size: 16px; }
         .toolbar {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
         }
         .btn {
-            padding: 14px 28px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            gap: 8px;
+            text-decoration: none;
         }
-        .btn-primary { 
-            background: linear-gradient(45deg, #667eea, #764ba2); 
-            color: white; 
-        }
-        .btn-primary:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
-        }
-        .btn-success { 
-            background: linear-gradient(45deg, #11998e, #38ef7d); 
-            color: white; 
-        }
-        .btn-success:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(17,153,142,0.4);
-        }
-        .btn-secondary { 
-            background: rgba(255,255,255,0.3); 
-            color: #333; 
-            backdrop-filter: blur(10px);
-        }
-        .btn-secondary:hover { transform: translateY(-2px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-blue:hover { background: #2563eb; transform: translateY(-1px); }
+        .btn-green { background: #10b981; color: white; }
+        .btn-green:hover { background: #059669; transform: translateY(-1px); }
+        .btn-gray { background: #6b7280; color: white; }
+        .btn-gray:hover { background: #4b5563; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
         #pdfContainer {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 30px;
-            min-height: 70vh;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 24px;
+            min-height: 600px;
             position: relative;
-            overflow: auto;
         }
-        #pdfCanvas { 
-            border: 2px solid #e0e0e0; 
-            border-radius: 12px;
+        #pdfCanvas {
             max-width: 100%;
+            border-radius: 12px;
+            cursor: crosshair !important;
             display: block;
             margin: 0 auto;
-            cursor: text;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .page-info {
             text-align: center;
-            margin: 25px 0;
-            color: #666;
+            padding: 20px 0;
             font-size: 18px;
+            color: #374151;
             font-weight: 500;
         }
         .text-editor {
             position: fixed;
-            background: rgba(255,255,255,0.98);
-            backdrop-filter: blur(20px);
-            border: 3px solid #667eea;
-            border-radius: 20px;
-            padding: 25px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 16px;
+            padding: 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            z-index: 1000;
-            min-width: 320px;
+            z-index: 10000;
+            min-width: 340px;
             max-width: 420px;
         }
-        .text-editor h4 { 
-            margin-bottom: 20px; 
-            color: #333; 
-            font-size: 1.3em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        textarea {
-            width: 100%;
-            height: 120px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 15px;
-            resize: vertical;
-            margin-bottom: 20px;
-            font-family: inherit;
-            transition: border-color 0.3s;
-        }
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-        }
-        .editor-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .editor-controls label { 
-            font-size: 15px; 
-            color: #555; 
-            font-weight: 500;
+        .text-editor h3 {
+            margin-bottom: 16px;
+            color: #1f2937;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        input[type="range"] { 
-            width: 150px; 
-            height: 6px;
-            border-radius: 3px;
-            background: #e0e0e0;
-            outline: none;
-            cursor: pointer;
+        #editText {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            resize: vertical;
+            margin-bottom: 16px;
+            font-family: inherit;
         }
-        .editor-actions {
+        #editText:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .font-control {
             display: flex;
-            gap: 15px;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .font-control label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+        #fontSize { width: 140px; }
+        .editor-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
         }
         .no-pdf {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 500px;
-            color: #888;
             text-align: center;
+            padding: 80px 40px;
+            color: #6b7280;
         }
-        .no-pdf-icon {
-            width: 120px;
-            height: 120px;
-            opacity: 0.3;
-            margin-bottom: 30px;
+        .no-pdf svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 24px;
+            opacity: 0.4;
         }
-        .status {
+        .status-bar {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(0,0,0,0.8);
+            background: #10b981;
             color: white;
             padding: 12px 20px;
             border-radius: 25px;
             font-size: 14px;
-            z-index: 999;
-            transform: translateX(400px);
-            transition: all 0.3s ease;
+            font-weight: 500;
+            transform: translateX(300px);
+            transition: all 0.3s;
+            z-index: 9999;
         }
-        .status.show { transform: translateX(0); }
+        .status-bar.show { transform: translateX(0); }
+        .status-bar.error { background: #ef4444; }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9998;
+            display: none;
+        }
         @media (max-width: 768px) {
-            body { padding: 10px; }
-            .toolbar { flex-direction: column; align-items: stretch; }
-            .btn { justify-content: center; }
+            .toolbar { flex-direction: column; }
             .text-editor { 
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                right: 10px;
-                max-width: none;
-                padding: 20px;
+                width: 90vw;
+                max-width: 400px;
+                margin: 0;
+                transform: none;
+                top: 20px;
+                left: 20px;
+                right: 20px;
             }
-            .header h1 { font-size: 2em; }
         }
     </style>
 </head>
 <body>
-    <div class="status" id="status"></div>
+    <div class="status-bar" id="statusBar"></div>
+    <div class="overlay" id="overlay"></div>
     
     <div class="container">
         <div class="header">
-            <h1>✨ PDF Editor</h1>
-            <p>Click anywhere on PDF to add/edit text • 100% free • No signup</p>
+            <h1>📄 PDF Editor Pro</h1>
+            <p>Upload PDF → Click anywhere → Edit text → Download</p>
         </div>
 
         <div class="toolbar">
-            <input type="file" id="pdfInput" accept="application/pdf,.pdf" style="display: none;">
-            <label for="pdfInput" class="btn btn-primary">
-                📁 Choose PDF File
+            <input type="file" id="fileInput" accept=".pdf,application/pdf" style="display: none;">
+            <label for="fileInput" class="btn btn-blue">
+                📁 Select PDF File
             </label>
-            
-            <button id="downloadBtn" class="btn btn-success" style="display: none;">
-                💾 Download PDF
+            <button id="downloadBtn" class="btn btn-green" disabled style="display: none;">
+                💾 Download Edited PDF
             </button>
-
-            <div class="page-controls" id="pageControls" style="display: none; margin-left: auto; flex-wrap: wrap;">
-                <button id="prevPage" class="btn btn-secondary">← Previous</button>
-                <span id="pageInfo" style="white-space: nowrap; font-weight: 500;"></span>
-                <button id="nextPage" class="btn btn-secondary">Next →</button>
+            <div id="pageNav" style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+                <button id="prevBtn" class="btn btn-gray" disabled>← Prev</button>
+                <span id="pageInfo" style="font-weight: 500; color: #374151;"></span>
+                <button id="nextBtn" class="btn btn-gray" disabled>Next →</button>
             </div>
         </div>
 
         <div id="pdfContainer">
-            <div class="no-pdf" id="noPdfMessage">
-                <svg class="no-pdf-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <polyline points="14,2 14,8 20,8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <polyline points="10,9 9,9 8,9"/>
+            <div class="no-pdf">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
                 </svg>
-                <h3>Upload your PDF to start editing</h3>
-                <p style="max-width: 400px; opacity: 0.8;">
-                    Select a PDF file above, then click anywhere on the page to add text!
-                </p>
+                <h2>No PDF loaded</h2>
+                <p>Select a PDF file above to start editing. Click anywhere to add text!</p>
             </div>
         </div>
     </div>
 
-    <!-- Text Editor Overlay -->
-    <div id="textEditor" class="text-editor" style="display: none;">
-        <h4>✏️ Add/Edit Text</h4>
-        <textarea id="editText" placeholder="Type your text here..."></textarea>
-        <div class="editor-controls">
-            <label>
-                📏 Size: <span id="fontSizeDisplay">14</span>px
-                <input type="range" id="fontSize" min="8" max="36" value="14">
-            </label>
+    <!-- Edit Overlay -->
+    <div id="editOverlay" class="text-editor" style="display: none;">
+        <h3>✏️ Add Text</h3>
+        <textarea id="editText" placeholder="Click and type your text here..."></textarea>
+        <div class="font-control">
+            <label>Font Size: <span id="sizeDisplay">16</span>px</label>
+            <input type="range" id="fontSize" min="10" max="40" value="16">
         </div>
-        <div class="editor-actions">
-            <button id="saveText" class="btn btn-primary">✅ Save to PDF</button>
-            <button id="cancelEdit" class="btn btn-secondary">❌ Cancel</button>
+        <div class="editor-buttons">
+            <button id="cancelBtn" class="btn btn-gray">Cancel</button>
+            <button id="saveBtn" class="btn btn-blue">✅ Save to PDF</button>
         </div>
     </div>
 
     <script>
-        // Initialize PDF.js worker immediately
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        // Setup PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
 
-        // Global state
-        let pdfDoc = null;
-        let totalPages = 0;
-        let currentPageNum = 1;
-        let originalPdfBytes = null;
-        let editPosition = { x: 0, y: 0 };
+        // State
+        let pdfDocument = null;
+        let currentPage = 1;
+        let numPages = 0;
+        let modifiedPdfBytes = null;
+        let clickPosition = { x: 0, y: 0 };
 
-        // DOM elements
-        const elements = {
-            pdfInput: document.getElementById('pdfInput'),
+        // Elements
+        const el = {
+            fileInput: document.getElementById('fileInput'),
             downloadBtn: document.getElementById('downloadBtn'),
             pdfContainer: document.getElementById('pdfContainer'),
             pageInfo: document.getElementById('pageInfo'),
-            prevPageBtn: document.getElementById('prevPage'),
-            nextPageBtn: document.getElementById('nextPage'),
-            pageControls: document.getElementById('pageControls'),
-            noPdfMessage: document.getElementById('noPdfMessage'),
-            textEditor: document.getElementById('textEditor'),
+            prevBtn: document.getElementById('prevBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            pageNav: document.getElementById('pageNav'),
+            statusBar: document.getElementById('statusBar'),
+            overlay: document.getElementById('overlay'),
+            editOverlay: document.getElementById('editOverlay'),
             editText: document.getElementById('editText'),
-            fontSizeSlider: document.getElementById('fontSize'),
-            fontSizeDisplay: document.getElementById('fontSizeDisplay'),
-            saveTextBtn: document.getElementById('saveText'),
-            cancelEditBtn: document.getElementById('cancelEdit'),
-            status: document.getElementById('status')
+            fontSize: document.getElementById('fontSize'),
+            sizeDisplay: document.getElementById('sizeDisplay'),
+            saveBtn: document.getElementById('saveBtn'),
+            cancelBtn: document.getElementById('cancelBtn')
         };
 
-        // Status helper
-        function showStatus(message, timeout = 3000) {
-            elements.status.textContent = message;
-            elements.status.classList.add('show');
-            if (timeout) {
-                setTimeout(() => elements.status.classList.remove('show'), timeout);
-            }
+        // Status messages
+        function showStatus(msg, isError = false) {
+            el.statusBar.textContent = msg;
+            el.statusBar.className = `status-bar show ${isError ? 'error' : ''}`;
+            setTimeout(() => el.statusBar.classList.remove('show'), 3000);
         }
 
         // Event listeners
-        elements.pdfInput.addEventListener('change', handleFileSelect);
-        elements.downloadBtn.addEventListener('click', downloadPDF);
-        elements.prevPageBtn.addEventListener('click', () => goToPage(currentPageNum - 1));
-        elements.nextPageBtn.addEventListener('click', () => goToPage(currentPageNum + 1));
-        elements.saveTextBtn.addEventListener('click', saveTextEdit);
-        elements.cancelEditBtn.addEventListener('click', hideTextEditor);
-        elements.fontSizeSlider.addEventListener('input', (e) => {
-            elements.fontSizeDisplay.textContent = e.target.value;
+        el.fileInput.addEventListener('change', loadPdf);
+        el.downloadBtn.addEventListener('click', downloadPdf);
+        el.prevBtn.addEventListener('click', () => changePage(-1));
+        el.nextBtn.addEventListener('click', () => changePage(1));
+        el.saveBtn.addEventListener('click', saveText);
+        el.cancelBtn.addEventListener('click', hideEditor);
+        el.fontSize.addEventListener('input', (e) => {
+            el.sizeDisplay.textContent = e.target.value;
         });
 
-        // File upload handler
-        async function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file || !file.type.includes('pdf')) {
-                showStatus('❌ Please select a valid PDF file', 4000);
-                return;
-            }
+        // Load PDF file
+        async function loadPdf(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-            showStatus('📥 Loading PDF...');
+            showStatus('Loading PDF...');
+            el.pdfContainer.innerHTML = '<div style="text-align:center;padding:60px;color:#6b7280">Loading PDF...</div>';
+
             try {
                 const arrayBuffer = await file.arrayBuffer();
-                originalPdfBytes = new Uint8Array(arrayBuffer);
+                modifiedPdfBytes = new Uint8Array(arrayBuffer);
 
-                // Load PDF for rendering
-                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                totalPages = pdfDoc.numPages;
-                currentPageNum = 1;
+                pdfDocument = await pdfjsLib.getDocument(arrayBuffer).promise;
+                numPages = pdfDocument.numPages;
+                currentPage = 1;
 
-                elements.noPdfMessage.style.display = 'none';
-                elements.downloadBtn.style.display = 'inline-flex';
-                elements.pageControls.style.display = 'flex';
+                el.downloadBtn.disabled = false;
+                el.downloadBtn.style.display = 'inline-flex';
+                el.pageNav.style.display = 'flex';
                 
-                await renderPage(currentPageNum);
-                updatePageControls();
-                showStatus(`✅ PDF loaded! ${totalPages} page${totalPages > 1 ? 's' : ''}`);
+                await renderPage();
+                updateControls();
+                showStatus(`PDF loaded! ${numPages} page${numPages === 1 ? '' : 's'}`);
                 
-            } catch (error) {
-                console.error('PDF load error:', error);
-                showStatus('❌ Error loading PDF. Try another file.', 5000);
+            } catch (err) {
+                showStatus('Failed to load PDF', true);
+                console.error(err);
             }
         }
 
-        // Render specific page
-        async function renderPage(pageNum) {
-            elements.pdfContainer.innerHTML = '<div style="text-align:center;padding:50px;color:#666;">Rendering page...</div>';
+        // Render current page
+        async function renderPage() {
+            const page = await pdfDocument.getPage(currentPage);
+            const scale = 1.4;
+            const viewport = page.getViewport({ scale });
+
+            const canvas = document.createElement('canvas');
+            canvas.id = 'pdfCanvas';
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            const ctx = canvas.getContext('2d');
+
+            el.pdfContainer.innerHTML = '';
+            el.pdfContainer.appendChild(canvas);
+
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            // **CRITICAL: Make clickable**
+            canvas.addEventListener('click', handleCanvasClick, { once: false });
+            canvas.style.cursor = 'crosshair';
+            canvas.title = 'Click anywhere to add text';
+        }
+
+        // **FIXED CLICK HANDLER**
+        function handleCanvasClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const canvas = document.getElementById('pdfCanvas');
+            const rect = canvas.getBoundingClientRect();
             
-            try {
-                const page = await pdfDoc.getPage(pageNum);
-                const scale = Math.min(1.5, (window.innerWidth - 100) / page.getViewport({scale: 1}).width);
-                const viewport = page.getViewport({ scale });
+            // Precise coordinate calculation
+            clickPosition.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            clickPosition.y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.id = 'pdfCanvas';
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+            // Show editor
+            el.editText.value = '';
+            el.editText.focus();
+            el.overlay.style.display = 'block';
+            el.editOverlay.style.display = 'block';
+            showStatus('✏️ Clicked! Now type your text...');
+        }
 
-                elements.pdfContainer.innerHTML = '';
-                elements.pdfContainer.appendChild(canvas);
-
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
-
-                await page.render(renderContext).promise;
-                
-                // Make canvas clickable for text editing
-                setupCanvasInteraction(canvas);
-                
-            } catch (error) {
-                console.error('Render error:', error);
-                elements.pdfContainer.innerHTML = '<div style="text-align:center;padding:50px;color:#e74c3c;">Error rendering page</div>';
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= numPages) {
+                currentPage = newPage;
+                renderPage();
+                updateControls();
             }
         }
 
-        // Setup canvas click-to-edit
-        function setupCanvasInteraction(canvas) {
-            canvas.style.cursor = 'text';
-            canvas.addEventListener('click', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                editPosition = {
-                    x: (e.clientX - rect.left) * (canvas.width / rect.width),
-                    y: (e.clientY - rect.top) * (canvas.height / rect.height)
-                };
-                
-                elements.editText.value = '';
-                elements.editText.focus();
-                elements.textEditor.style.left = `${rect.left + editPosition.x / (canvas.width / rect.width) + 15}px`;
-                elements.textEditor.style.top = `${rect.top + editPosition.y / (canvas.height / rect.height) + 15}px`;
-                elements.textEditor.style.display = 'block';
-            });
+        function updateControls() {
+            el.pageInfo.textContent = `Page ${currentPage} of ${numPages}`;
+            el.prevBtn.disabled = currentPage === 1;
+            el.nextBtn.disabled = currentPage === numPages;
         }
 
-        function goToPage(pageNum) {
-            if (pageNum < 1 || pageNum > totalPages) return;
-            currentPageNum = pageNum;
-            renderPage(pageNum);
-            updatePageControls();
-        }
-
-        function updatePageControls() {
-            elements.pageInfo.textContent = `Page ${currentPageNum} of ${totalPages}`;
-            elements.prevPageBtn.disabled = currentPageNum <= 1;
-            elements.nextPageBtn.disabled = currentPageNum >= totalPages;
-        }
-
-        async function saveTextEdit() {
-            const text = elements.editText.value.trim();
-            if (!text || !originalPdfBytes) return;
+        // Save text to PDF
+        async function saveText() {
+            const text = el.editText.value.trim();
+            if (!text || !modifiedPdfBytes) return;
 
             try {
-                showStatus('💾 Saving text to PDF...');
                 const { PDFDocument, rgb } = PDFLib;
-                const pdfDocLib = await PDFDocument.load(originalPdfBytes);
-                const pages = pdfDocLib.getPages();
-                const page = pages[currentPageNum - 1];
+                const pdf = await PDFDocument.load(modifiedPdfBytes);
+                const pages = pdf.getPages();
+                const page = pages[currentPage - 1];
+                const fontSize = parseInt(el.fontSize.value);
 
-                const fontSize = parseInt(elements.fontSizeSlider.value);
+                // Draw text at exact click position (Y flipped for PDF coords)
                 page.drawText(text, {
-                    x: editPosition.x,
-                    y: page.getHeight() - editPosition.y - fontSize,
+                    x: clickPosition.x,
+                    y: page.getHeight() - clickPosition.y - fontSize * 0.8,
                     size: fontSize,
-                    color: rgb(0 / 255, 0 / 255, 0 / 255),
+                    color: rgb(0, 0, 0),
                 });
 
-                originalPdfBytes = await pdfDocLib.save();
-                hideTextEditor();
-                renderPage(currentPageNum);
-                showStatus('✅ Text saved successfully!');
+                modifiedPdfBytes = await pdf.save();
+                hideEditor();
+                renderPage(); // Refresh view
+                showStatus('✅ Text added to PDF!');
                 
-            } catch (error) {
-                console.error('Save error:', error);
-                showStatus('❌ Error saving text', 4000);
+            } catch (err) {
+                showStatus('Error saving text', true);
+                console.error(err);
             }
         }
 
-        function hideTextEditor() {
-            elements.textEditor.style.display = 'none';
+        function hideEditor() {
+            el.editOverlay.style.display = 'none';
+            el.overlay.style.display = 'none';
         }
 
-        function downloadPDF() {
-            if (!originalPdfBytes) {
-                showStatus('❌ No PDF to download');
-                return;
-            }
+        function downloadPdf() {
+            if (!modifiedPdfBytes) return;
 
-            const blob = new Blob([originalPdfBytes], { type: 'application/pdf' });
+            const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `edited-${Date.now()}.pdf`;
-            document.body.appendChild(a);
+            a.download = `edited-pdf-${Date.now()}.pdf`;
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
             showStatus('📥 PDF downloaded!');
         }
 
-        // Hide editor on outside click
-        document.addEventListener('click', (e) => {
-            if (!elements.textEditor.contains(e.target) && e.target.id !== 'pdfInput') {
-                hideTextEditor();
-            }
+        // Close editor on overlay click
+        el.overlay.addEventListener('click', hideEditor);
+
+        // ESC key to close editor
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideEditor();
         });
 
-        // Drag editor (optional enhancement)
-        let isDragging = false;
-        elements.textEditor.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'H4') {
-                isDragging = true;
-            }
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                elements.textEditor.style.left = e.pageX - 150 + 'px';
-                elements.textEditor.style.top = e.pageY - 50 + 'px';
-            }
-        });
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        showStatus('✅ Ready! Click "Choose PDF File" to start editing');
+        showStatus('Ready! Upload PDF and click anywhere to edit.');
     </script>
 </body>
 </html>
