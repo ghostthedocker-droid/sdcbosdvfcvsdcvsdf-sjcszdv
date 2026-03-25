@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate QR Code Generator</title>
+<title>3D QR Code Generator</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -14,7 +14,9 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    margin: 0;
     padding: 20px;
+    perspective: 1000px;
   }
 
   .card {
@@ -25,12 +27,14 @@
     text-align: center;
     max-width: 450px;
     width: 100%;
+    transition: transform 0.2s ease;
   }
 
   h1 {
     font-weight: 600;
     color: #333;
     margin-bottom: 20px;
+    font-size: 1.8rem;
   }
 
   select, input[type=text], input[type=color] {
@@ -69,6 +73,7 @@
     margin-top: 20px;
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
   }
 
   .actions {
@@ -95,11 +100,24 @@
                 inset -2px -2px 5px #ffffff;
     font-size: 14px;
   }
+
+  /* Responsive */
+  @media(max-width: 500px){
+    .card {
+      padding: 25px;
+    }
+    h1 {
+      font-size: 1.5rem;
+    }
+    button, input, select {
+      font-size: 14px;
+    }
+  }
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>Ultimate QR Generator</h1>
+<div class="card" id="card">
+  <h1>3D QR Generator</h1>
 
   <select id="type">
     <option value="text">Text / URL</option>
@@ -158,30 +176,14 @@ function generateQR() {
   let qrText = "";
 
   switch(type){
-    case "text":
-      qrText = input1;
-      break;
-    case "wifi":
-      qrText = `WIFI:T:WPA;S:${input1};P:${input2};;`;
-      break;
-    case "vcard":
-      qrText = `BEGIN:VCARD\nVERSION:3.0\nFN:${input1}\nORG:${input2}\nEND:VCARD`;
-      break;
-    case "email":
-      qrText = `mailto:${input1}?subject=${input2}`;
-      break;
-    case "sms":
-      qrText = `SMSTO:${input1}:${input2}`;
-      break;
-    case "phone":
-      qrText = `tel:${input1}`;
-      break;
-    case "event":
-      qrText = `BEGIN:VEVENT\nSUMMARY:${input1}\nDESCRIPTION:${input2}\nEND:VEVENT`;
-      break;
-    case "crypto":
-      qrText = `bitcoin:${input1}?amount=${input2}`;
-      break;
+    case "text": qrText = input1; break;
+    case "wifi": qrText = `WIFI:T:WPA;S:${input1};P:${input2};;`; break;
+    case "vcard": qrText = `BEGIN:VCARD\nVERSION:3.0\nFN:${input1}\nORG:${input2}\nEND:VCARD`; break;
+    case "email": qrText = `mailto:${input1}?subject=${input2}`; break;
+    case "sms": qrText = `SMSTO:${input1}:${input2}`; break;
+    case "phone": qrText = `tel:${input1}`; break;
+    case "event": qrText = `BEGIN:VEVENT\nSUMMARY:${input1}\nDESCRIPTION:${input2}\nEND:VEVENT`; break;
+    case "crypto": qrText = `bitcoin:${input1}?amount=${input2}`; break;
   }
 
   const container = document.getElementById('qrcode');
@@ -218,10 +220,22 @@ function copyQR() {
 
 function saveHistory(text) {
   historyData.unshift(text);
-  if(historyData.length > 10) historyData.pop(); // keep last 10
+  if(historyData.length > 10) historyData.pop(); 
   const list = document.getElementById('historyList');
   list.innerHTML = historyData.map(item => `<div class="history-item">${item}</div>`).join('');
 }
+
+// 3D Hover Animation
+const card = document.getElementById('card');
+document.addEventListener('mousemove', (e) => {
+  const x = (window.innerWidth / 2 - e.pageX) / 25;
+  const y = (window.innerHeight / 2 - e.pageY) / 25;
+  card.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+});
+
+document.addEventListener('mouseleave', () => {
+  card.style.transform = 'rotateY(0deg) rotateX(0deg)';
+});
 </script>
 </body>
 </html>
