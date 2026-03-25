@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Browser PDF Editor</title>
+<title>Interactive PDF Editor</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 <style>
   body { font-family: Arial; text-align: center; margin: 20px; }
-  #pdf-container { position: relative; width: 80%; margin: 20px auto; border: 1px solid #ccc; }
-  canvas { border: 1px solid #000; display: block; margin: 0 auto; }
+  #pdf-container { width: 80%; margin: 20px auto; }
+  .page-container { position: relative; margin-bottom: 20px; }
+  canvas.pdf-page { border: 1px solid #000; display: block; }
+  canvas.fabric-canvas { position: absolute; left: 0; top: 0; }
   #controls { margin-top: 10px; }
   input, button { margin: 5px; }
 </style>
@@ -28,7 +30,6 @@
 
 <script>
 let pdfDoc = null;
-let pdfPages = [];
 let fabricCanvases = [];
 let currentPdfBytes = null;
 
@@ -42,42 +43,44 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
   pdfDoc = await pdfjsLib.getDocument({ data: currentPdfBytes }).promise;
 
   pdfContainer.innerHTML = '';
-  pdfPages = [];
   fabricCanvases = [];
 
   for (let i = 1; i <= pdfDoc.numPages; i++) {
     const page = await pdfDoc.getPage(i);
     const viewport = page.getViewport({ scale: 1.5 });
 
-    // PDF Canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    pdfContainer.appendChild(canvas);
+    // Container for PDF page + Fabric overlay
+    const pageDiv = document.createElement('div');
+    pageDiv.className = 'page-container';
+    pageDiv.style.width = viewport.width + 'px';
+    pageDiv.style.height = viewport.height + 'px';
+    pdfContainer.appendChild(pageDiv);
 
-    const ctx = canvas.getContext('2d');
+    // PDF Canvas
+    const pdfCanvas = document.createElement('canvas');
+    pdfCanvas.className = 'pdf-page';
+    pdfCanvas.width = viewport.width;
+    pdfCanvas.height = viewport.height;
+    pageDiv.appendChild(pdfCanvas);
+    const ctx = pdfCanvas.getContext('2d');
     await page.render({ canvasContext: ctx, viewport }).promise;
 
     // Fabric overlay
-    const fabricCanvas = new fabric.Canvas(document.createElement('canvas'), {
-      width: viewport.width,
-      height: viewport.height,
-      backgroundColor: 'transparent'
-    });
-    fabricCanvas.lowerCanvasEl.style.position = 'absolute';
-    fabricCanvas.lowerCanvasEl.style.left = canvas.offsetLeft + 'px';
-    fabricCanvas.lowerCanvasEl.style.top = canvas.offsetTop + 'px';
-    pdfContainer.appendChild(fabricCanvas.lowerCanvasEl);
-    fabricCanvases.push(fabricCanvas);
+    const fabricCanvasEl = document.createElement('canvas');
+    fabricCanvasEl.className = 'fabric-canvas';
+    fabricCanvasEl.width = viewport.width;
+    fabricCanvasEl.height = viewport.height;
+    pageDiv.appendChild(fabricCanvasEl);
 
-    pdfPages.push({ page, viewport, canvas });
+    const fabricCanvas = new fabric.Canvas(fabricCanvasEl, { selection: true });
+    fabricCanvases.push(fabricCanvas);
   }
 });
 
 // Add text
 document.getElementById('add-text-btn').addEventListener('click', () => {
   const text = document.getElementById('annotation-text').value;
-  if (!text) return alert('Enter text to add!');
+  if (!text) return alert('Enter text!');
   if (!fabricCanvases.length) return alert('Upload a PDF first!');
 
   // Add text to the first page for simplicity
@@ -102,8 +105,8 @@ document.getElementById('download-btn').addEventListener('click', async () => {
   for (let i = 0; i < fabricCanvases.length; i++) {
     const fabricCanvas = fabricCanvases[i];
     const pngDataUrl = fabricCanvas.toDataURL({ format: 'png' });
-    const pngImageBytes = await fetch(pngDataUrl).then(res => res.arrayBuffer());
-    const pngImage = await pdfLibDoc.embedPng(pngImageBytes);
+    const pngBytes = await fetch(pngDataUrl).then(res => res.arrayBuffer());
+    const pngImage = await pdfLibDoc.embedPng(pngBytes);
 
     const { width, height } = pages[i].getSize();
     pages[i].drawImage(pngImage, { x: 0, y: 0, width, height });
